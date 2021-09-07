@@ -6,8 +6,8 @@ import ReactJson from "react-json-view";
 import { BrowserRouter, Link, Route, Switch } from "react-router-dom";
 import Web3Modal from "web3modal";
 import "./App.css";
-import { Account, Address, AddressInput, Contract, Faucet, GasGauge, Header, Ramp, ThemeSwitch } from "./components";
-import {INFURA_ID, NETWORK, NETWORKS } from "./constants";
+import { Account, Address, AddressInput, Contracts, Faucet, GasGauge, Header, Ramp, ThemeSwitch } from "./components";
+import { INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
 import {
   useBalance,
@@ -19,6 +19,7 @@ import {
   useOnBlock,
   useUserSigner,
 } from "./hooks";
+import { Contract } from "ethers";
 
 const { BufferList } = require("bl");
 // https://www.npmjs.com/package/ipfs-http-client
@@ -106,6 +107,8 @@ const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUr
 
 // 🔭 block explorer URL
 const blockExplorer = targetNetwork.blockExplorer;
+console.log("what blockexplorer", blockExplorer);
+console.log("what target network", targetNetwork);
 
 /*
   Web3 modal helps us "connect" external wallets:
@@ -194,12 +197,21 @@ function App(props) {
   ]);
 
   // keep track of a variable from the contract in the local React state:
-  const balance = useContractReader(readContracts, "YourCollectible", "balanceOf", [address]);
-  console.log("🤗 balance:", balance);
+  //const balance = useContractReader(readContracts, "YourCollectible", "balanceOf", [address]);
+  //console.log("🤗 balance:", balance);
+
+  const pentas = new ethers.Contract('0x3aFa102B264b5f79ce80FED29E0724F922Ba57c7', ['function tokenOfOwnerByIndex(address owner, uint256 index)', 'function tokenURI(uint256 tokenID)', 'function balanceOf(address owner)'], address);
+
+  // used Pentas code 
+  const balance = (async () => {
+    await pentas.balanceOf(address);
+    // all of the script.... 
+  })();
+  // nothing else
 
   // 📟 Listen for broadcast events
-  const transferEvents = useEventListener(readContracts, "YourCollectible", "Transfer", localProvider, 1);
-  console.log("📟 Transfer events:", transferEvents);
+  //const transferEvents = useEventListener(readContracts, "YourCollectible", "Transfer", localProvider, 1);
+  //console.log("📟 Transfer events:", transferEvents);
 
   //
   // 🧠 This effect will update yourCollectibles by polling when your balance changes
@@ -213,9 +225,11 @@ function App(props) {
       for (let tokenIndex = 0; tokenIndex < balance; tokenIndex++) {
         try {
           console.log("GEtting token index", tokenIndex);
-          const tokenId = await readContracts.YourCollectible.tokenOfOwnerByIndex(address, tokenIndex);
+          //const tokenId = await readContracts.YourCollectible.tokenOfOwnerByIndex(address, tokenIndex);
+          const tokenId = await pentas.tokenOfOwnerByIndex(address, tokenIndex);
           console.log("tokenId", tokenId);
-          const tokenURI = await readContracts.YourCollectible.tokenURI(tokenId);
+          //const tokenURI = await readContracts.YourCollectible.tokenURI(tokenId);
+          const tokenURI = await pentas.tokenURI(tokenId);
           console.log("tokenURI", tokenURI);
 
           const ipfsHash = tokenURI.replace("https://ipfs.io/ipfs/", "");
@@ -541,7 +555,7 @@ function App(props) {
             </div>
           </Route>
 
-          <Route path="/transfers">
+          {/* <Route path="/transfers">
             <div style={{ width: 600, margin: "auto", marginTop: 32, paddingBottom: 32 }}>
               <List
                 bordered
@@ -557,7 +571,7 @@ function App(props) {
                 }}
               />
             </div>
-          </Route>
+          </Route> */}
 
           <Route path="/ipfsup">
             <div style={{ paddingTop: 32, width: 740, margin: "auto", textAlign: "left" }}>
@@ -634,7 +648,7 @@ function App(props) {
             <pre style={{ padding: 16, width: 500, margin: "auto", paddingBottom: 150 }}>{ipfsContent}</pre>
           </Route>
           <Route path="/debugcontracts">
-            <Contract
+            <Contracts
               name="YourCollectible"
               signer={userSigner}
               provider={localProvider}

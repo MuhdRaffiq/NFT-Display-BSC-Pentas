@@ -15,6 +15,13 @@ export const NETWORKS = {
     blockExplorer: "",
     rpcUrl: "http://" + window.location.hostname + ":8545",
   },
+  bsc: {
+    name: "bsc",
+    color: "#666666",
+    chainId: 56,
+    blockExplorer: "",
+    rpcUrl: "http://" + window.location.hostname + ":8545",
+  },
   mainnet: {
     name: "mainnet",
     color: "#ff8b9e",
