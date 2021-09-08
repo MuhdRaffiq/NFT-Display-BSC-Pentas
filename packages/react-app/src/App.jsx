@@ -11,22 +11,22 @@ import { INFURA_ID, NETWORK, NETWORKS } from "./constants";
 import { Transactor } from "./helpers";
 import {
   useBalance,
-  useContractLoader,
-  useContractReader,
-  useEventListener,
+  // useContractLoader,
+  // useContractReader,
+  // useEventListener,
   useExchangePrice,
   useGasPrice,
   useOnBlock,
   useUserSigner,
 } from "./hooks";
-import { Contract } from "ethers";
+// import { BigNumber, ethers, Contract } from "ethers";
 
 const { BufferList } = require("bl");
 // https://www.npmjs.com/package/ipfs-http-client
 const ipfsAPI = require("ipfs-http-client");
 const ipfs = ipfsAPI({ host: "ipfs.infura.io", port: "5001", protocol: "https" });
 
-const { ethers } = require("ethers");
+const { ethers, Contract } = require("ethers");
 
 /*
     Welcome to 🏗 scaffold-eth !
@@ -56,20 +56,9 @@ const NETWORKCHECK = true;
 
 // EXAMPLE STARTING JSON:
 const STARTING_JSON = {
-  description: "It's actually a bison?",
-  external_url: "https://austingriffith.com/portfolio/paintings/", // <-- this can link to a page for the specific file too
-  image: "https://austingriffith.com/images/paintings/buffalo.jpg",
-  name: "Buffalo",
-  attributes: [
-    {
-      trait_type: "BackgroundColor",
-      value: "green",
-    },
-    {
-      trait_type: "Eyes",
-      value: "googly",
-    },
-  ],
+  description: "This is the art of nasi kerabu",
+  image: "https://ipfs.io/ipfs/Qmc3BWqtyJGjFKtmPcE3HtYHvRRPPCJf5dveA8As83Wn5W/download%20(1).png",
+  name: "Nasi kerabu",
 };
 
 // helper function to "Get" from IPFS
@@ -102,8 +91,10 @@ const mainnetInfura = navigator.onLine ? new ethers.providers.StaticJsonRpcProvi
 const localProviderUrl = targetNetwork.rpcUrl;
 // as you deploy to other networks you can set REACT_APP_PROVIDER=https://dai.poa.network in packages/react-app/.env
 const localProviderUrlFromEnv = process.env.REACT_APP_PROVIDER ? process.env.REACT_APP_PROVIDER : localProviderUrl;
+console.log("show local provider", localProviderUrlFromEnv);
 if (DEBUG) console.log("🏠 Connecting to provider:", localProviderUrlFromEnv);
 const localProvider = new ethers.providers.StaticJsonRpcProvider(localProviderUrlFromEnv);
+console.log("what islocalProvider",localProvider);
 
 // 🔭 block explorer URL
 const blockExplorer = targetNetwork.blockExplorer;
@@ -135,9 +126,13 @@ const logoutOfWeb3Modal = async () => {
 
 function App(props) {
   const mainnetProvider = scaffoldEthProvider && scaffoldEthProvider._network ? scaffoldEthProvider : mainnetInfura;
+  console.log("what is mainnetProvider", mainnetProvider);
 
   const [injectedProvider, setInjectedProvider] = useState();
   const [address, setAddress] = useState();
+  const [balance, setBalance] = useState(0);
+  const [contractState, setState] = useState(true);
+  const [pentas, setPentas] = useState();
   /* 💵 This hook will get the price of ETH from 🦄 Uniswap: */
   const price = useExchangePrice(targetNetwork, mainnetProvider);
 
@@ -145,46 +140,57 @@ function App(props) {
   const gasPrice = useGasPrice(targetNetwork, "fast");
   // Use your injected provider from 🦊 Metamask or if you don't have it then instantly generate a 🔥 burner wallet.
   const userSigner = useUserSigner(injectedProvider, localProvider);
+  console.log("what is injectedProvider", injectedProvider);
+  console.log("what is localProvider", localProvider);
 
   useEffect(() => {
     async function getAddress() {
       if (userSigner) {
         const newAddress = await userSigner.getAddress();
         setAddress(newAddress);
+        console.log("getaddress works");
       }
     }
     getAddress();
   }, [userSigner]);
 
+  console.log("what is userSigner", userSigner);
+
   // You can warn the user if you would like them to be on a specific network
   const localChainId = localProvider && localProvider._network && localProvider._network.chainId;
+  console.log("what is localChainID", localChainId);
   const selectedChainId =
     userSigner && userSigner.provider && userSigner.provider._network && userSigner.provider._network.chainId;
+    console.log("what is selectedChainID", selectedChainId);
 
   // For more hooks, check out 🔗eth-hooks at: https://www.npmjs.com/package/eth-hooks
 
   // The transactor wraps transactions and provides notificiations
-  const tx = Transactor(userSigner, gasPrice);
+  // const tx = Transactor(userSigner, gasPrice);
 
   // Faucet Tx can be used to send funds from the faucet
   const faucetTx = Transactor(localProvider, gasPrice);
 
   // 🏗 scaffold-eth is full of handy hooks like this one to get your balance:
   const yourLocalBalance = useBalance(localProvider, address);
+  console.log("my local balance", yourLocalBalance);
 
   // Just plug in different 🛰 providers to get your balance on different chains:
   const yourMainnetBalance = useBalance(mainnetProvider, address);
+  console.log("my mainnet balance", yourMainnetBalance);
+
+  console.log("my address", address);
 
   // Load in your local 📝 contract and read a value from it:
-  const readContracts = useContractLoader(localProvider);
+  // const readContracts = useContractLoader(localProvider);
 
   // If you want to make 🔐 write transactions to your contracts, use the userSigner:
-  const writeContracts = useContractLoader(userSigner, { chainId: localChainId });
+  // const writeContracts = useContractLoader(userSigner, { chainId: localChainId });
 
   // EXTERNAL CONTRACT EXAMPLE:
   //
   // If you want to bring in the mainnet DAI contract it would look like:
-  const mainnetContracts = useContractLoader(mainnetProvider);
+  // const mainnetContracts = useContractLoader(mainnetProvider);
 
   // If you want to call a function on a new block
   useOnBlock(mainnetProvider, () => {
@@ -192,22 +198,67 @@ function App(props) {
   });
 
   // Then read your DAI balance like:
-  const myMainnetDAIBalance = useContractReader(mainnetContracts, "DAI", "balanceOf", [
-    "0x34aA3F359A9D614239015126635CE7732c18fDF3",
-  ]);
+  // const myMainnetDAIBalance = useContractReader(mainnetContracts, "DAI", "balanceOf", [
+  //   "0x34aA3F359A9D614239015126635CE7732c18fDF3",
+  // ]);
 
   // keep track of a variable from the contract in the local React state:
   //const balance = useContractReader(readContracts, "YourCollectible", "balanceOf", [address]);
   //console.log("🤗 balance:", balance);
 
-  const pentas = new ethers.Contract('0x3aFa102B264b5f79ce80FED29E0724F922Ba57c7', ['function tokenOfOwnerByIndex(address owner, uint256 index)', 'function tokenURI(uint256 tokenID)', 'function balanceOf(address owner)'], address);
+  //let provider1 = ethers.getDefaultProvider( localProviderUrlFromEnv )
+  // console.log("what is provider", provider1)
+
+  let wallet1 = new ethers.Wallet("0x3e59ad2747470be8a70bf2b958e2f0fe67f8225fccd2fa8f2bfcd04e00c47091", localProvider);
+  console.log("what is wallet", wallet1);
+
+  let abi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"approve","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"price","type":"uint256"}],"name":"approveMarket","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"burn","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"getApproved","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"symbol","type":"string"},{"internalType":"string","name":"prefixURI","type":"string"}],"name":"initialize","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"operator","type":"address"}],"name":"isApprovedForAll","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"marketplaceContract","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ownerOf","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"uint256","name":"salePrice","type":"uint256"}],"name":"royaltyInfo","outputs":[{"internalType":"address","name":"receiver","type":"address"},{"internalType":"uint256","name":"royaltyAmount","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"string","name":"ipfsCID","type":"string"},{"internalType":"uint32","name":"royalty","type":"uint32"}],"name":"safeMint","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"minter","type":"address"},{"internalType":"string","name":"ipfsCID","type":"string"},{"internalType":"uint32","name":"royalty","type":"uint32"}],"name":"safeMintFor","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"safeTransferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"bool","name":"approved","type":"bool"}],"name":"setApprovalForAll","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"marketplace","type":"address"}],"name":"setMarketplaceContract","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"string","name":"prefixURI","type":"string"}],"name":"setPrefixURI","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"bytes4","name":"interfaceId","type":"bytes4"}],"name":"supportsInterface","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"uint256","name":"index","type":"uint256"}],"name":"tokenOfOwnerByIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"tokenURI","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"transferFrom","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+
+  useEffect(() => {
+    async function contractState() {
+      if(userSigner) {
+        let newPentas = new ethers.Contract('0x3aFa102B264b5f79ce80FED29E0724F922Ba57c7', abi, userSigner);
+      setPentas(newPentas);
+      setState(false);
+      }
+      
+    };
+    contractState();
+    console.log("show pentas", pentas);
+  }, [contractState, address]);
+
+  console.log("show pentas2", pentas);
+  // const pentas = new ethers.Contract('0x3aFa102B264b5f79ce80FED29E0724F922Ba57c7', ['function balanceOf(address owner)', 'function tokenOfOwnerByIndex(address owner, uint256 index)', 'function tokenURI(ui256 tokenId)'], wallet1);
 
   // used Pentas code 
-  const balance = (async () => {
-    await pentas.balanceOf(address);
-    // all of the script.... 
-  })();
+  // const newBalance = (async () => {
+  //   await pentas.balanceOf("0xeF7dC884f2Db509957D1F2B5B81DF02fa36329ca");
+  //   // all of the script.... 
+  // })();
   // nothing else
+
+  // console.log("what is this", typeof(address));
+  // let addressString = toString("0xeF7dC884f2Db509957D1F2B5B81DF02fa36329ca");
+  // console.log("ape ni babi",addressString )
+
+  // setBalance(newBalance);
+
+  useEffect(() => {
+    async function getBalance() {
+      if(pentas && address) {
+        let newBalance = await pentas.balanceOf(address);
+        setBalance(newBalance);
+        console.log("balance function work");
+      }
+    }
+    getBalance();
+  }, [pentas, address]);
+
+
+  let balanceFloat = parseFloat(balance).toFixed(2);
+  console.log("my balance NFT wo float", typeof(balance));
+  console.log("my balance NFT wo float", balance);
+  console.log("my NFT balance", balanceFloat);
 
   // 📟 Listen for broadcast events
   //const transferEvents = useEventListener(readContracts, "YourCollectible", "Transfer", localProvider, 1);
@@ -224,22 +275,39 @@ function App(props) {
       const collectibleUpdate = [];
       for (let tokenIndex = 0; tokenIndex < balance; tokenIndex++) {
         try {
+;
           console.log("GEtting token index", tokenIndex);
           //const tokenId = await readContracts.YourCollectible.tokenOfOwnerByIndex(address, tokenIndex);
           const tokenId = await pentas.tokenOfOwnerByIndex(address, tokenIndex);
           console.log("tokenId", tokenId);
           //const tokenURI = await readContracts.YourCollectible.tokenURI(tokenId);
-          const tokenURI = await pentas.tokenURI(tokenId);
+          const tokenURIFull = await pentas.tokenURI(tokenId);
+          console.log("tokenURIFull", tokenURIFull);
+
+          const tokenURIFull2 = tokenURIFull.replace("ipfs://", "");
+          console.log("tokenURIFull2", tokenURIFull2)
+
+          const ipfsHash = tokenURIFull2.replace("/metadata.json", "");
+
+          const webLink = "https://ipfs.io/ipfs/";
+
+          const tokenURI = webLink.concat(ipfsHash);
           console.log("tokenURI", tokenURI);
 
-          const ipfsHash = tokenURI.replace("https://ipfs.io/ipfs/", "");
+          // const ipfsHash = tokenURIFull.replace("https://ipfs.io/ipfs/", "");
+
           console.log("ipfsHash", ipfsHash);
+          // const ipfsHash = 'https://ipfs.io/ipfs/QmQF4FJwFfQxejXx4coyoA6EDGnapExGrFoFVYkuxsKDyR/metadata.json';
 
           const jsonManifestBuffer = await getFromIPFS(ipfsHash);
 
           try {
             const jsonManifest = JSON.parse(jsonManifestBuffer.toString());
             console.log("jsonManifest", jsonManifest);
+            const newImage = jsonManifest.image;
+            const newImage1 = newImage.replace("ipfs://","https://ipfs.io/ipfs/");
+            jsonManifest.image = newImage1;
+            console.log("jsonManifest baru", jsonManifest);
             collectibleUpdate.push({ id: tokenId, uri: tokenURI, owner: address, ...jsonManifest });
           } catch (e) {
             console.log(e);
@@ -268,10 +336,10 @@ function App(props) {
       address &&
       selectedChainId &&
       yourLocalBalance &&
-      yourMainnetBalance &&
-      readContracts &&
-      writeContracts &&
-      mainnetContracts
+      yourMainnetBalance
+      // readContracts &&
+      // writeContracts &&
+      // mainnetContracts
     ) {
       console.log("_____________________________________ 🏗 scaffold-eth _____________________________________");
       console.log("🌎 mainnetProvider", mainnetProvider);
@@ -280,10 +348,10 @@ function App(props) {
       console.log("🕵🏻‍♂️ selectedChainId:", selectedChainId);
       console.log("💵 yourLocalBalance", yourLocalBalance ? ethers.utils.formatEther(yourLocalBalance) : "...");
       console.log("💵 yourMainnetBalance", yourMainnetBalance ? ethers.utils.formatEther(yourMainnetBalance) : "...");
-      console.log("📝 readContracts", readContracts);
-      console.log("🌍 DAI contract on mainnet:", mainnetContracts);
-      console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
-      console.log("🔐 writeContracts", writeContracts);
+      // console.log("📝 readContracts", readContracts);
+      // console.log("🌍 DAI contract on mainnet:", mainnetContracts);
+      // console.log("💵 yourMainnetDAIBalance", myMainnetDAIBalance);
+      // console.log("🔐 writeContracts", writeContracts);
     }
   }, [
     mainnetProvider,
@@ -291,9 +359,9 @@ function App(props) {
     selectedChainId,
     yourLocalBalance,
     yourMainnetBalance,
-    readContracts,
-    writeContracts,
-    mainnetContracts,
+    // readContracts,
+    // writeContracts,
+    // mainnetContracts,
   ]);
 
   let networkDisplay = "";
@@ -448,7 +516,7 @@ function App(props) {
               }}
               to="/"
             >
-              YourCollectibles
+              Your NFT in Pentas
             </Link>
           </Menu.Item>
           <Menu.Item key="/transfers">
@@ -481,7 +549,7 @@ function App(props) {
               IPFS Download
             </Link>
           </Menu.Item>
-          <Menu.Item key="/debugcontracts">
+          {/* <Menu.Item key="/debugcontracts">
             <Link
               onClick={() => {
                 setRoute("/debugcontracts");
@@ -490,7 +558,7 @@ function App(props) {
             >
               Debug Contracts
             </Link>
-          </Menu.Item>
+          </Menu.Item> */}
         </Menu>
 
         <Switch>
@@ -516,7 +584,7 @@ function App(props) {
                         }
                       >
                         <div>
-                          <img src={item.image} style={{ maxWidth: 150 }} />
+                          <img src={item.image} style={{ maxWidth: 300 }} />
                         </div>
                         <div>{item.description}</div>
                       </Card>
@@ -541,8 +609,9 @@ function App(props) {
                         />
                         <Button
                           onClick={() => {
-                            console.log("writeContracts", writeContracts);
-                            tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id));
+                            // console.log("writeContracts", writeContracts);
+                            
+                            // tx(writeContracts.YourCollectible.transferFrom(address, transferToAddresses[id], id));
                           }}
                         >
                           Transfer
@@ -647,7 +716,7 @@ function App(props) {
 
             <pre style={{ padding: 16, width: 500, margin: "auto", paddingBottom: 150 }}>{ipfsContent}</pre>
           </Route>
-          <Route path="/debugcontracts">
+          {/* <Route path="/debugcontracts">
             <Contracts
               name="YourCollectible"
               signer={userSigner}
@@ -655,7 +724,7 @@ function App(props) {
               address={address}
               blockExplorer={blockExplorer}
             />
-          </Route>
+          </Route> */}
         </Switch>
       </BrowserRouter>
 

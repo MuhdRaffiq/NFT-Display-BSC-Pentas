@@ -20,7 +20,7 @@ export const NETWORKS = {
     color: "#666666",
     chainId: 56,
     blockExplorer: "",
-    rpcUrl: "http://" + window.location.hostname + ":8545",
+    rpcUrl: "https://bsc.getblock.io/mainnet/?api_key=2e5254d5-7b0d-4b8f-9e3c-5efa81fe73ff",
   },
   mainnet: {
     name: "mainnet",

@@ -9,26 +9,26 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 // GET LISTED ON OPENSEA: https://testnets.opensea.io/get-listed/step-two
 
-contract YourCollectible is ERC721, Ownable {
+contract YourCollectible {
 
-  using Counters for Counters.Counter;
-  Counters.Counter private _tokenIds;
+  // using Counters for Counters.Counter;
+  // Counters.Counter private _tokenIds;
 
-  constructor() public ERC721("YourCollectible", "YCB") {
-    _setBaseURI("https://ipfs.io/ipfs/");
-  }
+  // constructor() public ERC721("YourCollectible", "YCB") {
+  //   _setBaseURI("https://ipfs.io/ipfs/");
+  // }
 
-  function mintItem(address to, string memory tokenURI)
-      public
-      onlyOwner
-      returns (uint256)
-  {
-      _tokenIds.increment();
+  // function mintItem(address to, string memory tokenURI)
+  //     public
+  //     onlyOwner
+  //     returns (uint256)
+  // {
+  //     _tokenIds.increment();
 
-      uint256 id = _tokenIds.current();
-      _mint(to, id);
-      _setTokenURI(id, tokenURI);
+  //     uint256 id = _tokenIds.current();
+  //     _mint(to, id);
+  //     _setTokenURI(id, tokenURI);
 
-      return id;
-  }
+  //     return id;
+  // }
 }
